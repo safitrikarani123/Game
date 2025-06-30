@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miko & Kiko's Smart Adventure</title>
+    <!-- Google Fonts - Inter for clean typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons for beautiful icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* General Body and Font Styling */
+        :root {
+            --primary-light: #87CEEB; /* Light blue */
+            --primary-dark: #0077B6; /* Darker blue */
+            --secondary: #FFC107; /* Amber yellow */
+            --correct: #4CAF50; /* Green */
+            --incorrect: #F44336; /* Red */
+            --white: #FFFFFF; /* White */
+            --text-dark: #023047; /* Dark blue/black for text */
+            --bg-light: #E0F7FA; /* Light cyan background */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg-light) 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 1.5rem;
+            color: var(--text-dark);
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Main Container for the Game */
+        .game-container {
+            width: 100%;
+            max-width: 900px; /* Max width for desktop views */
+            text-align: center;
+            margin: 0 auto;
+            display: flex; /* Use flex to center child elements */
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Screen Visibility Control */
+        .main-menu, .game-area {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 1.5rem 1rem; /* Adjust padding for mobile */
+            background: rgba(255, 255, 255, 0.85); /* Slightly less transparent */
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .main-menu.active, .game-area.active {
+            display: flex; /* Show when active */
+        }
+
+        /* Character Image Styling (for <img> tag) */
+        .character-image {
+            width: 120px; /* Slightly smaller for mobile */
+            height: auto;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+            border-radius: 50%; /* Make it circular if the image allows */
+        }
+
+        /* Game Titles and Subtitles */
+        .game-title {
+            font-size: clamp(2rem, 8vw, 2.8rem); /* More aggressive clamping for smaller screens */
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin: 0 0 0.5rem 0; /* Adjust margin */
+        }
+
+        .game-subtitle {
+            font-size: clamp(1rem, 4vw, 1.25rem); /* More aggressive clamping */
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+        }
+        
+        /* Menu Button Grid */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Smaller minmax for mobile */
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px; /* Limit width of grid on larger screens */
+        }
+
+        /* Menu Button Styling */
+        .menu-button {
+            background: linear-gradient(45deg, #2196F3, #03A9F4); /* Blue gradient */
+            color: var(--white);
+            border: none;
+            border-radius: 16px;
+            padding: 1rem; /* Good padding for touch targets */
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .menu-button i {
+            font-size: 1.5rem;
+        }
+
+        .menu-button:hover, .back-button:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 119, 182, 0.4);
+        }
+
+        /* Game Area Specific Styling */
+        .game-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+            gap: 0.8rem; /* Smaller gap for mobile */
+        }
+        
+        .status-display {
+            background: var(--secondary);
+            color: var(--text-dark);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem; /* Slightly smaller font for mobile */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-grow: 1; /* Allow to grow */
+            justify-content: center;
+            min-width: 100px; /* Ensure minimum width */
+        }
+        
+        .status-display i {
+            font-size: 1.3rem; /* Slightly smaller icon */
+        }
+
+        .back-button {
+            background: #FF7043; /* Orange */
+            color: var(--white);
+            padding: 0.75rem 1.2rem; /* Adjusted padding */
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .instruction-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem; /* Smaller gap */
+            margin: 1.5rem 0;
+            flex-wrap: wrap; /* Allow wrapping */
+        }
+        
+        .game-instruction {
+            font-size: clamp(1.2rem, 5vw, 1.75rem); /* More aggressive clamping */
+            font-weight: 700;
+            color: var(--primary-dark);
+            min-height: 50px;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        #playQuestionSound {
+            font-size: 2rem;
+            color: var(--primary-dark);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        #playQuestionSound:hover {
+            transform: scale(1.1);
+        }
+
+        .game-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.75rem; /* Slightly smaller gap between items */
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .game-item {
+            background: var(--white);
+            border: 3px solid transparent;
+            border-radius: 20px;
+            padding: 0.75rem; /* Adjusted padding */
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: calc(33% - 1rem); /* 3 items per row on larger mobiles/tablets */
+            max-width: 150px; /* Max width for single item */
+            aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+            position: relative;
+            box-sizing: border-box; /* Include padding and border in width */
+        }
+
+        @media (max-width: 480px) {
+            .game-item {
+                width: calc(50% - 1rem); /* 2 items per row on smaller mobiles */
+                max-width: 160px; /* Adjust max-width */
+            }
+        }
+        
+        .game-item.correct {
+            border-color: var(--correct);
+            transform: scale(1.05);
+        }
+        .game-item.incorrect {
+            border-color: var(--incorrect);
+            opacity: 0.6;
+        }
+
+        .game-item:not(.correct):not(.incorrect):hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-light);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        
+        .game-item .icon {
+            font-size: clamp(2.5rem, 8vw, 4rem); /* Responsive icon size */
+            margin-bottom: 0.2rem;
+            line-height: 1; /* Prevent extra space */
+        }
+        .game-item .icon svg { /* For SVG shapes */
+            width: 100%;
+            height: 100%;
+        }
+
+        .game-item span {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: clamp(0.8rem, 3vw, 1rem); /* Responsive text size */
+            text-align: center;
+            word-break: break-word; /* Break long words */
+            padding: 0 5px; /* Add slight horizontal padding */
+        }
+        
+        .item-sound-icon {
+            position: absolute;
+            bottom: 5px; /* Adjusted position */
+            right: 5px; /* Adjusted position */
+            font-size: 1.2rem; /* Slightly smaller icon */
+            color: var(--primary-dark);
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            padding: 4px;
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Add shadow */
+        }
+        .item-sound-icon:hover {
+            transform: scale(1.2);
+        }
+
+
+        /* Progress Bar Styling */
+        .progress-bar {
+            width: 100%;
+            height: 16px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A); /* Green gradient */
+            border-radius: 8px;
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* Modal Styling */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--white);
+            padding: 2rem 1.5rem; /* Adjusted padding for mobile */
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            max-width: 90%; /* Ensure modal fits on small screens */
+            box-sizing: border-box;
+        }
+        
+        .feedback-icon {
+            font-size: 4rem; /* Slightly smaller for modals */
+            margin-bottom: 1rem;
+        }
+        
+       .feedback-icon.correct { color: var(--correct); }
+        .feedback-icon.incorrect { color: var(--incorrect); }
+        .feedback-icon.complete { color: var(--secondary); }
+        .feedback-icon.level-up { color: var(--primary-dark); }
+
+        .modal-content h2 {
+            margin-top: 0;
+            font-size: clamp(1.5rem, 6vw, 2rem); /* Responsive heading */
+        }
+
+        .modal-content p {
+            font-size: clamp(0.9rem, 4vw, 1.1rem); /* Responsive paragraph */
+            color: #555;
+            margin-bottom: 1.5rem; /* Adjusted margin */
+        }
+
+        .modal-content button {
+            background: var(--primary-dark);
+            color: var(--white);
+            border: none;
+            padding: 10px 25px; /* Adjusted padding */
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .modal-content button:hover {
+            background: var(--text-dark);
+        }
+
+        /* Audio Controls */
+        .audio-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 12px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+        }
+
+        #mute-button {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--primary-dark);
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        #volume-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 8px;
+            background: #ddd;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+            border-radius: 5px;
+        }
+        #volume-slider:hover {
+            opacity: 1;
+        }
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-dark);
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        #volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--primary-dark);
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+
+
+        /* Animations */
+        @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes scaleIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+    <!-- Background music loop -->
+    <audio id="background-music" src="assets/musik.mp3" loop></audio>
+    
+    <div class="game-container">
+        <!-- Main Menu Screen -->
+        <div id="mainMenu" class="main-menu active">
+            <!-- Miko Character Image (using <img> tag) -->
+            <img src="assets/images/miko.jpg" alt="Miko Character" class="character-image">
+            <h1 class="game-title">Miko & Kiko's Smart Adventure</h1>
+            <p class="game-subtitle">Let's Learn and Play!</p>
+            <div class="menu-grid">
+                <button class="menu-button" onclick="startGame('greetings')"><i class="ph-bold ph-hand-waving"></i>Greetings</button>
+                <button class="menu-button" onclick="startGame('animals')"><i class="ph-bold ph-cat"></i>Animals</button>
+                <button class="menu-button" onclick="startGame('numbers')"><i class="ph-bold ph-hash"></i>Numbers</button>
+                <button class="menu-button" onclick="startGame('shapes')"><i class="ph-bold ph-star"></i>Shapes</button>
+                <button class="menu-button" onclick="startGame('things')"><i class="ph-bold ph-lamp"></i>Things Around Us</button>
+                <button class="menu-button" onclick="startGame('family')"><i class="ph-bold ph-users-three"></i>Family</button>
+                <button class="menu-button" onclick="startGame('fruits')"><i class="ph-bold ph-apple-logo"></i>Fruits</button>
+            </div>
+        </div>
+
+        <!-- Game Area Screen -->
+        <div id="gameArea" class="game-area">
+            <div class="game-header">
+                <button class="back-button" onclick="goBackToMenu()"><i class="ph-bold ph-arrow-left"></i>Menu</button>
+                <div id="levelDisplay" class="status-display"><i class="ph-bold ph-barricade"></i><span>Level: 1</span></div>
+                <div id="scoreDisplay" class="status-display"><i class="ph-bold ph-trophy"></i><span>Score: 0</span></div>
+            </div>
+            <div class="instruction-container">
+                <p id="gameInstruction" class="game-instruction"></p>
+                <i id="playQuestionSound" class="ph-bold ph-speaker-high"></i>
+            </div>
+            <div id="gameContent" class="game-content"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+        </div>
+
+        <!-- Feedback Modal -->
+        <div id="feedbackModal" class="modal">
+            <div class="modal-content">
+                <div id="feedbackIcon"></div>
+                <h2 id="feedbackTitle"></h2>
+                <p id="feedbackMessage"></p>
+                <button onclick="closeFeedbackModal()">Continue!</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio Controls (Mute/Volume) -->
+    <div class="audio-controls">
+        <button id="mute-button"><i class="ph-bold ph-speaker-high"></i></button>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element References ---
+            const mainMenu = document.getElementById('mainMenu');
+            const gameArea = document.getElementById('gameArea');
+            const gameInstruction = document.getElementById('gameInstruction');
+            const playQuestionSoundBtn = document.getElementById('playQuestionSound');
+            const gameContent = document.getElementById('gameContent');
+            const scoreDisplay = document.getElementById('scoreDisplay').querySelector('span');
+            const levelDisplay = document.getElementById('levelDisplay').querySelector('span');
+            const progressBar = document.getElementById('progressBar');
+            const feedbackModal = document.getElementById('feedbackModal');
+            const feedbackIcon = document.getElementById('feedbackIcon');
+            const feedbackTitle = document.getElementById('feedbackTitle');
+            const feedbackMessage = document.getElementById('feedbackMessage');
+            
+            // Audio elements
+            const backgroundMusic = document.getElementById('background-music');
+            const muteButton = document.getElementById('mute-button');
+            const volumeSlider = document.getElementById('volume-slider');
+            
+            // --- Game State Variables ---
+            let score = 0;
+            let currentCategory = '';
+            let currentLevel = 1;
+            let currentQuestionIndex = 0;
+            let questions = []; // Array to hold questions for the current level
+            let ttsVoices = []; // Array to store available Text-to-Speech voices
+            let gamePhase = 'playing'; // Tracks game state: 'playing', 'level_up', 'category_complete'
+
+            // --- Sound Effects ---
+            const correctSound = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_c3b092fff0.mp3'); 
+            const incorrectSound = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_8908342f53.mp3');
+            const levelUpSound = new Audio('https://cdn.pixabay.com/audio/2021/08/04/audio_bb63044463.mp3');
+            const categoryCompleteSound = new Audio('https://cdn.pixabay.com/audio/2022/11/17/audio_88c42c262c.mp3');
+            
+            // --- Icon and Emoji Mapping ---
+            // Maps text answers to Phosphor Icons or Emojis for visual representation.
+            // Shapes use SVG generation function.
+            const iconMap = {
+                'good morning':{type:'icon',value:'ph-sun'},'good night':{type:'icon',value:'ph-moon'},'good afternoon':{type:'icon',value:'ph-cloud-sun'},goodbye:{type:'icon',value:'ph-hand-waving'},'thank you':{type:'icon',value:'ph-hands-clapping'},sorry:{type:'icon',value:'ph-smiley-sad'},'how are you?':{type:'icon',value:'ph-smiley'},hello:{type:'icon',value:'ph-hand-waving'},cat:{type:'icon',value:'ph-cat'},dog:{type:'icon',value:'ph-dog'},bird:{type:'icon',value:'ph-bird'},cow:{type:'icon',value:'ph-cow'},fish:{type:'icon',value:'ph-fish-simple'},lion:{type:'emoji',value:'🦁'},bear:{type:'emoji',value:'🐻'},elephant:{type:'emoji',value:'🐘'},tiger:{type:'emoji',value:'🐅'},monkey:{type:'emoji',value:'🐒'},goat:{type:'emoji',value:'🐐'},chicken:{type:'emoji',value:'🐓'},horse:{type:'emoji',value:'🐴'},pig:{type:'emoji',value:'🐷'},sheep:{type:'emoji',value:'🐑'},duck:{type:'emoji',value:'🦆'},book:{type:'icon',value:'ph-book-open'},pencil:{type:'icon',value:'ph-pencil-line'},table:{type:'icon',value:'ph-table'},chair:{type:'icon',value:'ph-armchair'},car:{type:'icon',value:'ph-car'},bicycle:{type:'icon',value:'ph-bicycle'},bed:{type:'icon',value:'ph-bed'},ball:{type:'icon',value:'ph-baseball'},clock:{type:'icon',value:'ph-clock'},wardrobe:{type:'emoji',value:'🚪'},lamp:{type:'icon',value:'ph-lamp'},boat:{type:'emoji',value:'⛵'},mother:{type:'icon',value:'ph-gender-female'},father:{type:'icon',value:'ph-gender-male'},child:{type:'icon',value:'ph-child'},baby:{type:'icon',value:'ph-baby'},grandfather:{type:'emoji',value:'👴'},grandmother:{type:'emoji',value:'👵'},uncle:{type:'emoji',value:'👨'},aunt:{type:'emoji',value:'👩'},sister:{type:'emoji',value:'👧'},brother:{type:'emoji',value:'👦'},banana:{type:'emoji',value:'🍌'},apple:{type:'emoji',value:'🍎'},orange:{type:'emoji',value:'🍊'},grapes:{type:'emoji',value:'🍇'},mango:{type:'emoji',value:'🥭'},watermelon:{type:'emoji',value:'🍉'},strawberry:{type:'emoji',value:'🍓'},pineapple:{type:'emoji',value:'🍍'},cherry:{type:'emoji',value:'🍒'},pear:{type:'emoji',value:'🍐'},square:{type:'shape',value:'persegi'},circle:{type:'shape',value:'lingkaran'},triangle:{type:'shape',value:'segitiga'},star:{type:'shape',value:'bintang'},heart:{type:'shape',value:'hati'},moon:{type:'shape',value:'bulan'},rectangle:{type:'shape',value:'persegi'},oval:{type:'shape',value:'lingkaran'},diamond:{type:'shape',value:'bintang'},pentagon:{type:'shape',value:'bintang'},hexagon:{type:'shape',value:'bintang'}
+            };
+
+            // --- Game Data Structure ---
+            // Contains questions, answers, and options for each category and level.
+            const gameData = {
+                greetings: {
+                    levels: [
+                        [{ question: "Choose 'Hello'", answer: "Hello", options: ["Hello", "Goodbye"] }],
+                        [{ question: "Choose 'Goodbye'", answer: "Goodbye", options: ["Sorry", "Goodbye", "Hello"] }],
+                        [{ question: "Choose 'Thank You'", answer: "Thank You", options: ["Sorry", "Thank You", "Hello"] }],
+                        [{ question: "Choose 'Good Morning'", answer: "Good Morning", options: ["Good Morning", "Good Night", "Good Afternoon"] }],
+                        [{ question: "Choose 'Good Night'", answer: "Good Night", options: ["Good Morning", "Good Night", "Sorry"] }],
+                        [{ question: "How do you ask how someone is?", answer: "How are you?", options: ["How are you?", "Thank You", "Goodbye"] }],
+                        [{ question: "What do you say when you make a mistake?", answer: "Sorry", options: ["Thank You", "Sorry", "Hello"] }],
+                        [{ question: "What is a polite way to greet in the afternoon?", answer: "Good Afternoon", options: ["Good Morning", "Good Night", "Good Afternoon"] }],
+                        [{ question: "Choose a formal way to say hello.", answer: "Hello", options: ["Hello", "Hi", "Hey"] }],
+                        [{ question: "Choose an informal way to say goodbye.", answer: "Goodbye", options: ["Farewell", "Goodbye", "See you later"] }]
+                    ]
+                },
+                animals: {
+                    levels: [
+                        [{ question: "Which one is the 'Cat'?", answer: "Cat", options: ["Cat", "Dog"] }],
+                        [{ question: "Which one is the 'Dog'?", answer: "Dog", options: ["Cow", "Dog"] }],
+                        [{ question: "Select the 'Fish'", answer: "Fish", options: ["Bird", "Fish", "Cat"] }],
+                        [{ question: "Choose the 'Bird'", answer: "Bird", options: ["Bird", "Dog", "Lion"] }],
+                        [{ question: "Which one is a 'Cow'?", answer: "Cow", options: ["Horse", "Cow", "Pig"] }],
+                        [{ question: "Select the 'Elephant'", answer: "Elephant", options: ["Tiger", "Elephant", "Monkey"] }],
+                        [{ question: "Which of these is a farm animal?", answer: "Sheep", options: ["Lion", "Tiger", "Sheep"] }],
+                        [{ question: "Choose the 'Monkey'", answer: "Monkey", options: ["Bear", "Monkey", "Goat"] }],
+                        [{ question: "Select the 'Horse'", answer: "Horse", options: ["Horse", "Duck", "Fish"] }],
+                        [{ question: "Which one is a 'Lion'?", answer: "Lion", options: ["Cat", "Dog", "Lion"] }]
+                    ]
+                },
+                numbers: {
+                    levels: [
+                        [{ question: "Choose 'One'", answer: "1", options: ["1", "2"] }],
+                        [{ question: "Choose 'Three'", answer: "3", options: ["3", "4"] }],
+                        [{ question: "Choose 'Five'", answer: "5", options: ["5", "6", "7"] }],
+                        [{ question: "Choose 'Four'", answer: "4", options: ["2", "4", "8"] }],
+                        [{ question: "Choose 'Six'", answer: "6", options: ["6", "9", "3"] }],
+                        [{ question: "Choose 'Eight'", answer: "8", options: ["7", "8", "1"] }],
+                        [{ question: "Choose 'Seven'", answer: "7", options: ["10", "2", "7"] }],
+                        [{ question: "Choose 'Nine'", answer: "9", options: ["9", "5", "4"] }],
+                        [{ question: "Choose 'Ten'", answer: "10", options: ["6", "10", "3"] }],
+                        [{ question: "What comes after two?", answer: "3", options: ["3", "1", "4"] }]
+                    ]
+                },
+                shapes: {
+                    levels: [
+                        [{ question: "Which is a 'Circle'?", answer: "Circle", options: ["Square", "Circle"] }],
+                        [{ question: "Which is a 'Square'?", answer: "Square", options: ["Circle", "Square"] }],
+                        [{ question: "Select the 'Triangle'", answer: "Triangle", options: ["Star", "Triangle", "Heart"] }],
+                        [{ question: "Select the 'Star'", answer: "Star", options: ["Moon", "Star", "Heart"] }],
+                        [{ question: "Choose the 'Heart'", answer: "Heart", options: ["Heart", "Diamond", "Oval"] }],
+                        [{ question: "Which one is a 'Rectangle'?", answer: "Rectangle", options: ["Square", "Rectangle", "Circle"] }],
+                        [{ question: "Select the 'Moon'", answer: "Moon", options: ["Star", "Sun", "Moon"] }],
+                        [{ question: "Which shape has 3 sides?", answer: "Triangle", options: ["Square", "Triangle", "Circle"] }],
+                        [{ question: "Which shape has 4 equal sides?", answer: "Square", options: ["Rectangle", "Square", "Diamond"] }],
+                        [{ question: "Choose the 'Oval'", answer: "Oval", options: ["Circle", "Oval", "Heart"] }]
+                    ]
+                },
+                things: {
+                    levels: [
+                        [{ question: "Choose the 'Ball'", answer: "Ball", options: ["Ball", "Book"] }],
+                        [{ question: "Choose the 'Book'", answer: "Book", options: ["Car", "Book"] }],
+                        [{ question: "Select the 'Car'", answer: "Car", options: ["Bicycle", "Car", "Boat"] }],
+                        [{ question: "Which one is a 'Chair'?", answer: "Chair", options: ["Table", "Chair", "Bed"] }],
+                        [{ question: "Select the 'Table'", answer: "Table", options: ["Lamp", "Table", "Clock"] }],
+                        [{ question: "Which one is a 'Lamp'?", answer: "Lamp", options: ["Pencil", "Lamp", "Ball"] }],
+                        [{ question: "Choose the 'Bed'", answer: "Bed", options: ["Bed", "Chair", "Car"] }],
+                        [{ question: "Select the 'Clock'", answer: "Clock", options: ["Bicycle", "Clock", "Book"] }],
+                        [{ question: "Which one is a 'Pencil'?", answer: "Pencil", options: ["Pencil", "Ball", "Boat"] }],
+                        [{ question: "Choose the 'Bicycle'", answer: "Bicycle", options: ["Car", "Bicycle", "Bed"] }]
+                    ]
+                },
+                family: {
+                    levels: [
+                        [{ question: "Choose 'Mother'", answer: "Mother", options: ["Mother", "Father"] }],
+                        [{ question: "Choose 'Father'", answer: "Father", options: ["Mother", "Father"] }],
+                        [{ question: "Select 'Baby'", answer: "Baby", options: ["Baby", "Sister", "Brother"] }],
+                        [{ question: "Choose 'Sister'", answer: "Sister", options: ["Brother", "Sister", "Mother"] }],
+                        [{ question: "Choose 'Brother'", answer: "Brother", options: ["Sister", "Brother", "Father"] }],
+                        [{ question: "Which one is 'Grandmother'?", answer: "Grandmother", options: ["Grandmother", "Grandfather", "Aunt"] }],
+                        [{ question: "Which one is 'Grandfather'?", answer: "Grandfather", options: ["Uncle", "Grandfather", "Baby"] }],
+                        [{ question: "Select 'Aunt'", answer: "Aunt", options: ["Mother", "Aunt", "Sister"] }],
+                        [{ question: "Select 'Uncle'", answer: "Uncle", options: ["Father", "Child", "Uncle"] }],
+                        [{ question: "Choose 'Child'", answer: "Child", options: ["Mother", "Father", "Child"] }]
+                    ]
+                },
+                fruits: {
+                    levels: [
+                        [{ question: "Choose 'Apple'", answer: "Apple", options: ["Apple", "Banana"] }],
+                        [{ question: "Choose 'Banana'", answer: "Banana", options: ["Orange", "Banana"] }],
+                        [{ question: "Select 'Orange'", answer: "Orange", options: ["Grapes", "Orange", "Apple"] }],
+                        [{ question: "Select 'Grapes'", answer: "Grapes", options: ["Grapes", "Pear", "Mango"] }],
+                        [{ question: "Choose 'Strawberry'", answer: "Strawberry", options: ["Cherry", "Strawberry", "Watermelon"] }],
+                        [{ question: "Which one is a 'Watermelon'?", answer: "Watermelon", options: ["Pineapple", "Watermelon", "Apple"] }],
+                        [{ question: "Select 'Pineapple'", answer: "Pineapple", options: ["Pineapple", "Banana", "Pear"] }],
+                        [{ question: "Choose 'Mango'", answer: "Mango", options: ["Grapes", "Mango", "Cherry"] }],
+                        [{ question: "Which one is a 'Cherry'?", answer: "Cherry", options: ["Strawberry", "Apple", "Cherry"] }],
+                        [{ question: "Select 'Pear'", answer: "Pear", options: ["Pear", "Orange", "Banana"] }]
+                    ]
+                }
+            };
+            
+            // --- Audio Control Logic ---
+            function setupAudioControls() {
+                // Set initial volume for background music
+                backgroundMusic.volume = volumeSlider.value;
+
+                // Toggle mute/unmute when mute button is clicked
+                muteButton.addEventListener('click', () => {
+                    backgroundMusic.muted = !backgroundMusic.muted;
+                    updateMuteIcon(); // Update the icon based on mute status
+                });
+
+                // Adjust background music volume when slider is moved
+                volumeSlider.addEventListener('input', (e) => {
+                    backgroundMusic.volume = e.target.value;
+                    // Mute if volume is 0, unmute otherwise
+                    backgroundMusic.muted = e.target.value == 0; 
+                    updateMuteIcon(); // Update the icon based on volume
+                });
+            }
+
+            // Updates the mute button icon (speaker with or without slash)
+            function updateMuteIcon() {
+                if (backgroundMusic.muted || backgroundMusic.volume === 0) {
+                    muteButton.innerHTML = `<i class="ph-bold ph-speaker-slash"></i>`; // Muted icon
+                } else {
+                    muteButton.innerHTML = `<i class="ph-bold ph-speaker-high"></i>`; // Unmuted icon
+                }
+            }
+            
+            // --- Text-to-Speech (TTS) Functionality ---
+            // Loads available TTS voices when the window loads or voices change
+            function loadVoices() {
+                if ('speechSynthesis' in window) {
+                    ttsVoices = speechSynthesis.getVoices();
+                    if (speechSynthesis.onvoiceschanged !== undefined) {
+                        speechSynthesis.onvoiceschanged = () => ttsVoices = speechSynthesis.getVoices();
+                    }
+                }
+            }
+            loadVoices(); // Initial load of voices
+            
+            // Speaks the given text using Text-to-Speech
+            function speak(text) {
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel(); // Stop any current speech
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    // Try to find an English (US) female voice, fallback to any English voice
+                    let voice = ttsVoices.find(v => v.lang.startsWith('en-US') && v.name.includes('Female'));
+                    if (!voice) voice = ttsVoices.find(v => v.lang.startsWith('en'));
+
+                    utterance.voice = voice;
+                    utterance.lang = 'en-US'; // Set language
+                    utterance.pitch = 1.2; // Adjust pitch for a more friendly voice
+                    utterance.rate = 0.9; // Adjust rate for clarity
+                    speechSynthesis.speak(utterance);
+                } else {
+                    console.log("Your browser does not support Text-to-Speech.");
+                }
+            }
+            
+            // --- Game Flow Functions ---
+
+            // Starts the game for a selected category
+            window.startGame = (category) => {
+                currentCategory = category;
+                currentLevel = 1;
+                score = 0; // Reset score for new game
+                mainMenu.classList.remove('active'); // Hide main menu
+                gameArea.classList.add('active'); // Show game area
+                // Attempt to play background music, catch potential errors (e.g., user gesture required)
+                backgroundMusic.play().catch(e => console.log("Failed to play music: ", e));
+                updateScore(); // Update score display
+                loadLevel(currentLevel); // Load the first level
+            };
+
+            // Loads questions and options for the current level
+            function loadLevel(level) {
+                currentLevel = level;
+                levelDisplay.textContent = `Level: ${currentLevel}`; // Update level display
+                gamePhase = 'playing'; // Set game phase to playing
+                
+                const levelData = gameData[currentCategory].levels[level - 1];
+                if (!levelData) {
+                    // If no more levels in this category, go back to menu
+                    console.error(`Level ${level} not found for category ${currentCategory}`);
+                    goBackToMenu();
+                    return;
+                }
+                questions = shuffleArray([...levelData]); // Shuffle questions for variety
+                currentQuestionIndex = 0; // Reset question index
+                loadQuestion(); // Load the first question of the level
+            }
+
+            // Navigates back to the main menu
+            window.goBackToMenu = () => {
+                speechSynthesis.cancel(); // Stop any ongoing speech
+                backgroundMusic.pause(); // Pause background music
+                backgroundMusic.currentTime = 0; // Reset music to start
+                gameArea.classList.remove('active'); // Hide game area
+                mainMenu.classList.add('active'); // Show main menu
+            };
+
+            // Closes the feedback modal and proceeds to the next phase of the game
+            window.closeFeedbackModal = () => {
+                feedbackModal.classList.remove('active'); // Hide modal
+                if (gamePhase === 'level_up') {
+                    loadLevel(currentLevel); // Load next level after level-up
+                } else if (gamePhase === 'category_complete') {
+                    goBackToMenu(); // Go to main menu after category completion
+                } else {
+                    loadQuestion(); // Load next question
+                }
+            };
+
+            // Loads and displays the current question and its options
+            function loadQuestion() {
+                // Check if all questions in the current level are answered
+                if (currentQuestionIndex >= questions.length) {
+                    return; // Should be handled by showLevelUpFeedback/showCategoryCompleteFeedback
+                }
+                const q = questions[currentQuestionIndex];
+                gameInstruction.textContent = q.question; // Display question text
+                
+                speak(q.question); // Speak the question
+                playQuestionSoundBtn.onclick = () => speak(q.question); // Allow replaying question sound
+
+                gameContent.innerHTML = ''; // Clear previous options
+                const shuffledOptions = shuffleArray([...q.options]); // Shuffle answer options
+
+                shuffledOptions.forEach(option => {
+                    const item = document.createElement('div');
+                    item.className = 'game-item';
+                    item.dataset.answer = option; // Store answer in data attribute
+
+                    const iconElement = document.createElement('div');
+                    iconElement.className = 'icon';
+
+                    const lookupKey = String(option).toLowerCase(); // Convert option to string for lookup
+                    if (iconMap[lookupKey]) {
+                        const iconData = iconMap[lookupKey];
+                        if (iconData.type === 'icon') {
+                            iconElement.innerHTML = `<i class="ph-bold ${iconData.value}"></i>`;
+                        } else if (iconData.type === 'emoji') {
+                            iconElement.textContent = iconData.value;
+                        } else if (iconData.type === 'shape') {
+                            iconElement.innerHTML = getShapeSVG(iconData.value); // Generate SVG for shapes
+                            // iconElement.style.width = '70px'; // Set dimensions for SVG
+                            // iconElement.style.height = '70px'; // Set dimensions for SVG
+                        }
+                    } else { // For numbers or unrecognized terms, display as text
+                        iconElement.textContent = option;
+                    }
+                    
+                    item.appendChild(iconElement);
+
+                    const span = document.createElement('span');
+                    span.textContent = option;
+                    item.appendChild(span);
+                    
+                    // Add a speaker icon to each item to play its sound/name
+                    const itemSoundIcon = document.createElement('i');
+                    itemSoundIcon.className = 'ph-bold ph-speaker-simple-high item-sound-icon';
+                    itemSoundIcon.onclick = (e) => {
+                        e.stopPropagation(); // Prevent the item click event from firing
+                        speak(option);
+                    };
+                    item.appendChild(itemSoundIcon);
+
+                    item.addEventListener('click', () => checkAnswer(item, option)); // Attach click listener
+                    gameContent.appendChild(item);
+                });
+
+                updateProgressBar(); // Update the progress bar
+            }
+            
+            // Checks the selected answer against the correct answer
+            function checkAnswer(selectedItem, selectedAnswer) {
+                speechSynthesis.cancel(); // Stop any ongoing speech
+                const correctAnswer = questions[currentQuestionIndex].answer;
+                const isCorrect = selectedAnswer.toLowerCase() === correctAnswer.toLowerCase();
+                
+                // Disable all items to prevent further clicks
+                gameContent.querySelectorAll('.game-item').forEach(item => {
+                    item.style.pointerEvents = 'none';
+                    if (item.dataset.answer.toLowerCase() !== correctAnswer.toLowerCase()) {
+                       item.classList.add('incorrect'); // Mark incorrect options
+                    }
+                });
+
+                selectedItem.classList.remove('incorrect'); // Remove incorrect class if it was added temporarily
+                if(isCorrect) {
+                   selectedItem.classList.add('correct'); // Mark selected item as correct
+                } else {
+                   const correctItem = gameContent.querySelector(`[data-answer='${correctAnswer}']`);
+                   if(correctItem) correctItem.classList.add('correct'); // Highlight the correct answer
+                }
+                
+                // Provide feedback after a short delay
+                setTimeout(() => {
+                    if (isCorrect) {
+                        score += 10 * currentLevel; // Increase score, more for higher levels
+                        // Play correct sound and catch any errors during playback
+                        correctSound.play().catch(e => console.error("Error playing correct sound:", e)); 
+                        updateScore(); // Update score display
+                        currentQuestionIndex++; // Move to the next question ONLY if correct
+
+                        // Check if level or category is complete
+                        if (currentQuestionIndex >= questions.length) { 
+                            currentLevel++; // Increment level
+                            if (currentLevel > gameData[currentCategory].levels.length) { 
+                               showCategoryCompleteFeedback(); // All levels in category finished
+                            } else {
+                               showLevelUpFeedback(); // Level completed, but more levels exist
+                            }
+                        } else {
+                            showFeedback(isCorrect, correctAnswer); // Show feedback for current question
+                        }
+                    } else { // If incorrect
+                        // Play incorrect sound and catch any errors during playback
+                        incorrectSound.play().catch(e => console.error("Error playing incorrect sound:", e));
+                        // Do NOT increment currentQuestionIndex
+                        // Do NOT change currentLevel
+                        showFeedback(isCorrect, correctAnswer); // Show incorrect feedback, then reload the SAME question
+                    }
+                }, 1200); // Short delay to show feedback visual
+            }
+
+            // Updates the score displayed on the screen
+            function updateScore() {
+                scoreDisplay.textContent = `Score: ${score}`;
+            }
+
+            // Updates the progress bar
+            function updateProgressBar() {
+                const progressPercentage = (currentQuestionIndex / questions.length) * 100;
+                progressBar.style.width = `${progressPercentage}%`;
+            }
+            
+            // Displays feedback modal for a single question
+            function showFeedback(isCorrect, correctAnswer) {
+                gamePhase = 'playing'; // Still in playing phase
+                feedbackModal.classList.add('active'); // Show modal
+                if(isCorrect) {
+                    feedbackIcon.innerHTML = `<i class="ph-bold ph-check-circle correct feedback-icon"></i>`;
+                    feedbackTitle.textContent = 'Awesome!';
+                    feedbackMessage.textContent = 'You got it right!';
+                } else {
+                    feedbackIcon.innerHTML = `<i class="ph-bold ph-x-circle incorrect feedback-icon"></i>`;
+                    feedbackTitle.textContent = 'Try Again!';
+                    feedbackMessage.textContent = `The correct answer is "${correctAnswer}".`;
+                }
+            }
+
+            // Displays feedback modal for level completion
+            function showLevelUpFeedback() {
+                gamePhase = 'level_up'; // Set game phase to level up
+                levelUpSound.play(); // Play level up sound
+                feedbackModal.classList.add('active');
+                feedbackIcon.innerHTML = `<i class="ph-bold ph-arrow-fat-lines-up level-up feedback-icon"></i>`;
+                feedbackTitle.textContent = 'Level Up!';
+                feedbackMessage.textContent = `Great job! You've reached Level ${currentLevel}!`;
+            }
+
+            // Displays feedback modal for category completion
+            function showCategoryCompleteFeedback() {
+                gamePhase = 'category_complete'; // Set game phase to category complete
+                categoryCompleteSound.play(); // Play category complete sound
+                backgroundMusic.pause(); // Pause background music
+                backgroundMusic.currentTime = 0; // Reset music
+                feedbackModal.classList.add('active');
+                feedbackIcon.innerHTML = `<i class="ph-bold ph-confetti complete feedback-icon"></i>`;
+                feedbackTitle.textContent = 'Hooray, Category Complete!';
+                feedbackMessage.textContent = `You finished all levels with a final score of ${score}!`;
+                progressBar.style.width = `100%`; // Fill progress bar completely
+            }
+
+            // Shuffles an array randomly (Fisher-Yates algorithm)
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+                }
+                return array;
+            }
+            
+            // Generates SVG code for different shapes
+            function getShapeSVG(shapeName) {
+                // Define colors for shapes
+                const colors = { lingkaran: '#FF5722', persegi: '#4CAF50', segitiga: '#3F51B5', bintang: '#FFC107', hati: '#E91E63', bulan: '#9E9E9E' };
+                const color = colors[shapeName] || '#000'; // Default to black if color not found
+                // Return SVG based on shape name
+                switch(shapeName) {
+                    case 'lingkaran': return `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="${color}" /></svg>`;
+                    case 'persegi': return `<svg viewBox="0 0 100 100"><rect x="5" y="5" width="90" height="90" rx="10" ry="10" fill="${color}" /></svg>`;
+                    case 'segitiga': return `<svg viewBox="0 0 100 100"><polygon points="50,5 95,95 5,95" fill="${color}" /></svg`;
+                    case 'bintang': return `<svg viewBox="0 0 100 100"><polygon points="50,5 61,40 98,40 68,62 79,96 50,75 21,96 32,62 2,40 39,40" fill="${color}"/></svg>`;
+                    case 'hati': return `<svg viewBox="0 0 100 100"><path d="M 50,30 C 10,0 40,0 50,30 C 60,0 90,0 50,30 C 50,30 90,60 50,95 C 10,60 50,30 50,30 Z" fill="${color}"/></svg>`;
+                    case 'bulan': return `<svg viewBox="0 0 100 100"><path d="M 50 95 A 45 45 0 1 1 50 5 C 70 30 70 70 50 95 Z" fill="${color}" /></svg>`;
+                    default: return ''; // Return empty string for unrecognized shapes
+                }
+            }
+
+            // Initialize all core functions when the DOM is ready
+            setupAudioControls();
+        });
+    </script>
+</body>
+</html>
